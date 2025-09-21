@@ -85,6 +85,13 @@
         <h1>CareLink24への招待</h1>
         <p class="subtitle">見守りアプリへの招待を受け取りました</p>
         
+        <!-- デバッグ用：token表示 -->
+        <div id="debugInfo" style="background: #f0f0f0; padding: 10px; margin: 10px 0; font-size: 12px; border-radius: 4px;">
+            <strong>デバッグ情報:</strong><br>
+            URL: <span id="currentUrl"></span><br>
+            Token: <span id="tokenValue"></span>
+        </div>
+        
         <div class="loading" id="loading">
             <p>アプリを確認しています...</p>
         </div>
@@ -105,6 +112,10 @@
         // URLパラメータからトークンを取得
         const urlParams = new URLSearchParams(window.location.search);
         const token = urlParams.get('token');
+        
+        // デバッグ情報表示
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('tokenValue').textContent = token || 'なし';
         
         if (!token) {
             document.getElementById('errorMessage').textContent = '無効な招待リンクです';
