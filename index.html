@@ -109,7 +109,23 @@
         if (!token) {
             document.getElementById('errorMessage').textContent = '無効な招待リンクです';
             document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('openApp').style.display = 'none';
         }
+
+        // アプリが開いたらフォールバック表示を取り消す。
+        // 取り消さないと、アプリ復帰後に「インストールされていません」が出たままになる。
+        let fallbackTimer = null;
+        function cancelFallback() {
+            if (fallbackTimer) {
+                clearTimeout(fallbackTimer);
+                fallbackTimer = null;
+            }
+            document.getElementById('loading').style.display = 'none';
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (document.hidden) cancelFallback();
+        });
+        window.addEventListener('pagehide', cancelFallback);
 
         document.getElementById('openApp').addEventListener('click', function() {
             if (!token) return;
@@ -119,7 +135,7 @@
             
             // アプリ起動を試行
             const deepLink = `carelink24://invite?token=${token}`;
-            const fallbackUrl = 'https://apps.apple.com/app/carelink24'; // 仮のApp Store URL
+            const fallbackUrl = 'https://apps.apple.com/jp/app/carelink24/id6754234773';
             
             // iOS/Android判定
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -130,7 +146,7 @@
                 window.location.href = deepLink;
                 
                 // 2秒後にアプリが開かなければエラー表示
-                setTimeout(() => {
+                fallbackTimer = setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('errorMessage').style.display = 'block';
                     document.getElementById('downloadApp').style.display = 'block';
@@ -142,7 +158,7 @@
                 const intentUrl = `intent://invite?token=${token}#Intent;scheme=carelink24;package=net.carelink24.carelink24;end`;
                 window.location.href = intentUrl;
                 
-                setTimeout(() => {
+                fallbackTimer = setTimeout(() => {
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('errorMessage').style.display = 'block';
                     document.getElementById('downloadApp').style.display = 'block';
