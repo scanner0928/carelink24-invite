@@ -89,7 +89,7 @@
             <p>アプリを確認しています...</p>
         </div>
         
-        <button class="btn btn-primary" id="openApp">アプリで開く</button>
+        <a class="btn btn-primary" id="openApp" href="#">アプリで開く</a>
         
         <div class="error-message" id="errorMessage">
             <strong>アプリがインストールされていません</strong><br>
@@ -127,52 +127,44 @@
         });
         window.addEventListener('pagehide', cancelFallback);
 
-        document.getElementById('openApp').addEventListener('click', function() {
-            if (!token) return;
-            
-            // ローディング表示
-            document.getElementById('loading').style.display = 'block';
-            
-            // アプリ起動を試行
-            const deepLink = `carelink24://invite?token=${token}`;
-            const fallbackUrl = 'https://apps.apple.com/jp/app/carelink24/id6754234773';
-            
-            // iOS/Android判定
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            const isAndroid = /Android/.test(navigator.userAgent);
-            
-            if (isIOS) {
-                // iOS: アプリ起動を試行
-                window.location.href = deepLink;
-                
-                // 2秒後にアプリが開かなければエラー表示
-                fallbackTimer = setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('errorMessage').style.display = 'block';
-                    document.getElementById('downloadApp').style.display = 'block';
-                    document.getElementById('downloadApp').href = fallbackUrl;
-                }, 2000);
-                
-            } else if (isAndroid) {
-                // Android: Intent URLを使用
-                const intentUrl = `intent://invite?token=${token}#Intent;scheme=carelink24;package=net.carelink24.carelink24;end`;
-                window.location.href = intentUrl;
-                
-                fallbackTimer = setTimeout(() => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('errorMessage').style.display = 'block';
-                    document.getElementById('downloadApp').style.display = 'block';
-                    document.getElementById('downloadApp').href = 'https://play.google.com/store/apps/details?id=net.carelink24.carelink24';
-                }, 2000);
-                
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        const isAndroid = /Android/.test(navigator.userAgent);
+        const storeUrl = isAndroid
+            ? 'https://play.google.com/store/apps/details?id=net.carelink24.carelink24'
+            : 'https://apps.apple.com/jp/app/carelink24/id6754234773';
+
+        // アプリ起動は「リンクのタップ」として行う。
+        // Chrome for iOS は JavaScript による location.href での独自スキーム遷移を弾くことがあり、
+        // その場合アプリが起動しないままフォールバックだけが表示される。
+        if (token) {
+            const openApp = document.getElementById('openApp');
+            if (isAndroid) {
+                // Android は intent:// を使い、未インストール時は Play ストアへ自動で退避させる
+                openApp.href = 'intent://invite?token=' + encodeURIComponent(token)
+                    + '#Intent;scheme=carelink24;package=net.carelink24.carelink24'
+                    + ';S.browser_fallback_url=' + encodeURIComponent(storeUrl) + ';end';
             } else {
-                // その他（PC等）
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('errorMessage').textContent = 'モバイルデバイスでご利用ください';
-                document.getElementById('errorMessage').style.display = 'block';
+                openApp.href = 'carelink24://invite?token=' + encodeURIComponent(token);
             }
-        });
-        
+
+            openApp.addEventListener('click', function() {
+                if (!isIOS && !isAndroid) {
+                    document.getElementById('errorMessage').textContent = 'モバイルデバイスでご利用ください';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    return;
+                }
+                document.getElementById('loading').style.display = 'block';
+                // アプリが開けばページは背面に回り、下の cancelFallback で取り消される
+                fallbackTimer = setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('errorMessage').style.display = 'block';
+                    const dl = document.getElementById('downloadApp');
+                    dl.style.display = 'block';
+                    dl.href = storeUrl;
+                }, 2500);
+            });
+        }
+
         // ページ読み込み時に自動でアプリ起動を試行（オプション）
         // window.addEventListener('load', function() {
         //     if (token) {
