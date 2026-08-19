@@ -45,6 +45,10 @@
             font-size: 16px;
         }
         .btn {
+            /* a要素にも使うため box-sizing を明示する。
+               button はブラウザ既定が border-box だが a は content-box のため、
+               指定しないと width:100% に padding が加算されて右へはみ出す。 */
+            box-sizing: border-box;
             display: block;
             width: 100%;
             padding: 16px;
@@ -53,6 +57,8 @@
             border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
+            font-family: inherit;
+            text-align: center;
             text-decoration: none;
             cursor: pointer;
         }
